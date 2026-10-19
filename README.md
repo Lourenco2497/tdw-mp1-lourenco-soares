@@ -174,6 +174,19 @@ npm run dev
 
 Your blog should be up and running on [http://localhost:3000](http://localhost:3000)! If it doesn't work, post on [GitHub discussions](https://github.com/vercel/next.js/discussions).
 
+## Production build and checks
+
+Run all commands from the repository root. The published-content build needs only `CONTENTFUL_SPACE_ID` and `CONTENTFUL_ACCESS_TOKEN`; it does not need the management or preview token.
+
+```bash
+npm run build
+node --experimental-strip-types --test tests/contentful.test.mjs
+```
+
+The focused tests use Node.js 22.6 or newer and mock Contentful, so they need no credentials. The build exports the home page, published post pages, and a 404 page into `out/`. Deploy that directory to a static host such as Cloudflare Pages. There is no `npm start` server for this static export; use `npm run dev` for local development.
+
+Publishing or unpublishing Contentful content requires another build and deployment. The planned CMS webhook will automate that. Missing credentials, failed CMS queries, or incomplete published posts fail the build rather than silently deploying an empty blog. A genuinely empty CMS collection still displays the empty state.
+
 ## Acknowledgements
 
 This project is based on the original work by **Francisco Regalado**:

@@ -16,38 +16,72 @@ const POST_GRAPHQL_FIELDS = `
   excerpt
   content {
     json
+    links {
+      assets {
+        block {
+          sys { id }
+          url
+          description
+          width
+          height
+        }
+      }
+    }
   }
 `;
 
 async function fetchGraphQL(query: string, preview = false): Promise<any> {
-  return fetch(
+  const token = preview
+    ? process.env.CONTENTFUL_PREVIEW_ACCESS_TOKEN
+    : process.env.CONTENTFUL_ACCESS_TOKEN;
+
+  if (!process.env.CONTENTFUL_SPACE_ID || !token) {
+    throw new Error("Contentful configuration is missing a space ID or access token.");
+  }
+
+  const response = await fetch(
     `https://graphql.contentful.com/content/v1/spaces/${process.env.CONTENTFUL_SPACE_ID}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${
-          preview
-            ? process.env.CONTENTFUL_PREVIEW_ACCESS_TOKEN
-            : process.env.CONTENTFUL_ACCESS_TOKEN
-        }`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ query }),
-      next: { tags: ["posts"] },
     },
-  ).then((response) => response.json());
+  );
+
+  if (!response.ok) {
+    throw new Error(`Contentful request failed with HTTP ${response.status}.`);
+  }
+
+  const result = await response.json();
+  if (result.errors?.length) {
+    throw new Error("Contentful GraphQL query failed. Check the content model and published linked assets.");
+  }
+  return result;
 }
 
 function extractPost(fetchResponse: any): any {
-  return fetchResponse?.data?.postCollection?.items?.[0];
+  return extractPostEntries(fetchResponse)[0];
 }
 
 function extractPostEntries(fetchResponse: any): any[] {
-  if (!fetchResponse?.data?.postCollection?.items) {
-    console.error("Failed to fetch posts from Contentful:", fetchResponse);
-    return [];
+  const posts = fetchResponse?.data?.postCollection?.items;
+  if (!Array.isArray(posts)) {
+    throw new Error("Contentful returned an invalid post collection.");
   }
-  return fetchResponse.data.postCollection.items;
+  for (const post of posts) {
+    if (
+      !post?.title || !post.slug || !post.excerpt ||
+      !post.date || Number.isNaN(Date.parse(post.date)) ||
+      !post.coverImage?.url || !post.author?.name ||
+      !post.author.picture?.url || !post.content?.json
+    ) {
+      throw new Error("Contentful post is incomplete. Fill required fields and publish linked authors and images.");
+    }
+  }
+  return posts;
 }
 
 export async function getPreviewPostBySlug(slug: string | null): Promise<any> {

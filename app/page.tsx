@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { draftMode } from "next/headers";
 
 import Date from "./date";
 import CoverImage from "./cover-image";
@@ -77,8 +76,7 @@ function HeroPost({
 }
 
 export default async function Page() {
-  const { isEnabled } = await draftMode();
-  const allPosts = await getAllPosts(isEnabled);
+  const allPosts = await getAllPosts(false);
   
   if (!allPosts || allPosts.length === 0) {
     return (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { draftMode } from "next/headers";
+import { notFound } from "next/navigation";
 
 import MoreStories from "../../more-stories";
 import Avatar from "../../avatar";
@@ -8,6 +8,8 @@ import CoverImage from "../../cover-image";
 
 import { Markdown } from "@/lib/markdown";
 import { getAllPosts, getPostAndMorePosts } from "@/lib/api";
+
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const allPosts = await getAllPosts(false);
@@ -23,8 +25,9 @@ export default async function PostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { isEnabled } = await draftMode();
-  const { post, morePosts } = await getPostAndMorePosts(slug, isEnabled);
+  const { post, morePosts } = await getPostAndMorePosts(slug, false);
+
+  if (!post) notFound();
 
   return (
     <div className="container mx-auto px-5">
