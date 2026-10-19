@@ -5,7 +5,7 @@ export default function Avatar({
   picture,
 }: {
   name: string;
-  picture: any;
+  picture: { url: string };
 }) {
   return (
     <div className="flex items-center">
