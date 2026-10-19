@@ -4,10 +4,13 @@ This example showcases Next.js's [Static Generation](https://nextjs.org/docs/bas
 
 ## How to use
 
-Execute
+Use the existing application in the repository root (the directory containing this README and `package.json`). Do not scaffold another app inside it.
+
+After completing the Contentful configuration below, run these commands from the repository root:
 
 ```bash
-npx create-next-app --example cms-contentful cms-contentful-app
+npm ci
+npm run dev
 ```
 
 ## Configuration
