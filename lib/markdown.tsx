@@ -1,4 +1,4 @@
-import Image from "next/image";
+import ContentfulImage from "./contentful-image";
 import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
 import { BLOCKS } from "@contentful/rich-text-types";
 
@@ -8,6 +8,8 @@ interface Asset {
   };
   url: string;
   description: string;
+  width: number;
+  height: number;
 }
 
 interface AssetLink {
@@ -31,7 +33,15 @@ function RichTextAsset({
   const asset = assets?.find((asset) => asset.sys.id === id);
 
   if (asset?.url) {
-    return <Image src={asset.url} layout="fill" alt={asset.description} />;
+    return (
+      <ContentfulImage
+        src={asset.url}
+        width={asset.width}
+        height={asset.height}
+        alt={asset.description || ""}
+        className="h-auto max-w-full"
+      />
+    );
   }
 
   return null;
@@ -43,7 +53,7 @@ export function Markdown({ content }: { content: Content }) {
       [BLOCKS.EMBEDDED_ASSET]: (node: any) => (
         <RichTextAsset
           id={node.data.target.sys.id}
-          assets={content.links.assets.block}
+          assets={content.links?.assets?.block}
         />
       ),
     },

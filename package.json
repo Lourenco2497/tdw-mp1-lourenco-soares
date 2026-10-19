@@ -3,7 +3,6 @@
   "scripts": {
     "dev": "next",
     "build": "next build",
-    "start": "next start",
     "setup": "node --env-file-if-exists=.env.local ./lib/setup.js"
   },
   "dependencies": {
