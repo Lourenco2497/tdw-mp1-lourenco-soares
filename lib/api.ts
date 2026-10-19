@@ -1,3 +1,31 @@
+import type { Document } from "@contentful/rich-text-types";
+
+export interface ContentfulAsset {
+  sys: { id: string };
+  url: string;
+  description: string | null;
+  width: number;
+  height: number;
+}
+
+export interface Post {
+  slug: string;
+  title: string;
+  coverImage: { url: string };
+  date: string;
+  author: { name: string; picture: { url: string } };
+  excerpt: string;
+  content: {
+    json: Document;
+    links?: { assets: { block: ContentfulAsset[] } };
+  };
+}
+
+interface ContentfulResponse {
+  data?: { postCollection?: { items?: Post[] } };
+  errors?: unknown[];
+}
+
 const POST_GRAPHQL_FIELDS = `
   slug
   title
@@ -30,13 +58,18 @@ const POST_GRAPHQL_FIELDS = `
   }
 `;
 
-async function fetchGraphQL(query: string, preview = false): Promise<any> {
+async function fetchGraphQL(
+  query: string,
+  preview = false,
+): Promise<ContentfulResponse> {
   const token = preview
     ? process.env.CONTENTFUL_PREVIEW_ACCESS_TOKEN
     : process.env.CONTENTFUL_ACCESS_TOKEN;
 
   if (!process.env.CONTENTFUL_SPACE_ID || !token) {
-    throw new Error("Contentful configuration is missing a space ID or access token.");
+    throw new Error(
+      "Contentful configuration is missing a space ID or access token.",
+    );
   }
 
   const response = await fetch(
@@ -55,36 +88,47 @@ async function fetchGraphQL(query: string, preview = false): Promise<any> {
     throw new Error(`Contentful request failed with HTTP ${response.status}.`);
   }
 
-  const result = await response.json();
+  const result: ContentfulResponse = await response.json();
   if (result.errors?.length) {
-    throw new Error("Contentful GraphQL query failed. Check the content model and published linked assets.");
+    throw new Error(
+      "Contentful GraphQL query failed. Check the content model and published linked assets.",
+    );
   }
   return result;
 }
 
-function extractPost(fetchResponse: any): any {
+function extractPost(fetchResponse: ContentfulResponse): Post | undefined {
   return extractPostEntries(fetchResponse)[0];
 }
 
-function extractPostEntries(fetchResponse: any): any[] {
+function extractPostEntries(fetchResponse: ContentfulResponse): Post[] {
   const posts = fetchResponse?.data?.postCollection?.items;
   if (!Array.isArray(posts)) {
     throw new Error("Contentful returned an invalid post collection.");
   }
   for (const post of posts) {
     if (
-      !post?.title || !post.slug || !post.excerpt ||
-      !post.date || Number.isNaN(Date.parse(post.date)) ||
-      !post.coverImage?.url || !post.author?.name ||
-      !post.author.picture?.url || !post.content?.json
+      !post?.title ||
+      !post.slug ||
+      !post.excerpt ||
+      !post.date ||
+      Number.isNaN(Date.parse(post.date)) ||
+      !post.coverImage?.url ||
+      !post.author?.name ||
+      !post.author.picture?.url ||
+      !post.content?.json
     ) {
-      throw new Error("Contentful post is incomplete. Fill required fields and publish linked authors and images.");
+      throw new Error(
+        "Contentful post is incomplete. Fill required fields and publish linked authors and images.",
+      );
     }
   }
   return posts;
 }
 
-export async function getPreviewPostBySlug(slug: string | null): Promise<any> {
+export async function getPreviewPostBySlug(
+  slug: string | null,
+): Promise<Post | undefined> {
   const entry = await fetchGraphQL(
     `query {
       postCollection(where: { slug: "${slug}" }, preview: true, limit: 1) {
@@ -98,7 +142,7 @@ export async function getPreviewPostBySlug(slug: string | null): Promise<any> {
   return extractPost(entry);
 }
 
-export async function getAllPosts(isDraftMode: boolean): Promise<any[]> {
+export async function getAllPosts(isDraftMode: boolean): Promise<Post[]> {
   const entries = await fetchGraphQL(
     `query {
       postCollection(where: { slug_exists: true }, order: date_DESC, preview: ${
@@ -117,7 +161,7 @@ export async function getAllPosts(isDraftMode: boolean): Promise<any[]> {
 export async function getPostAndMorePosts(
   slug: string,
   preview: boolean,
-): Promise<any> {
+): Promise<{ post: Post | undefined; morePosts: Post[] }> {
   const entry = await fetchGraphQL(
     `query {
       postCollection(where: { slug: "${slug}" }, preview: ${

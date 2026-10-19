@@ -1,7 +1,7 @@
 import ContentfulImage from "../lib/contentful-image";
 import Link from "next/link";
 
-function cn(...classes: any[]) {
+function cn(...classes: (string | Record<string, string | undefined>)[]) {
   return classes.filter(Boolean).join(" ");
 }
 

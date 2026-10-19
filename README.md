@@ -180,12 +180,26 @@ Run all commands from the repository root. The published-content build needs onl
 
 ```bash
 npm run build
-node --experimental-strip-types --test tests/contentful.test.mjs
+npm run check
 ```
 
-The focused tests use Node.js 22.6 or newer and mock Contentful, so they need no credentials. The build exports the home page, published post pages, and a 404 page into `out/`. Deploy that directory to a static host such as Cloudflare Pages. There is no `npm start` server for this static export; use `npm run dev` for local development.
+Use Node.js 24, as recorded in `.nvmrc`, and install dependencies with `npm ci`. The Vitest tests mock Contentful, so they need no credentials. The build exports the home page, published post pages, and a 404 page into `out/`. Deploy that directory to a static host such as Cloudflare Pages. There is no `npm start` server for this static export; use `npm run dev` for local development.
 
 Publishing or unpublishing Contentful content requires another build and deployment. The planned CMS webhook will automate that. Missing credentials, failed CMS queries, or incomplete published posts fail the build rather than silently deploying an empty blog. A genuinely empty CMS collection still displays the empty state.
+
+### Local quality commands
+
+| Command                | Purpose                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `npm run lint`         | Check Next.js and TypeScript lint rules; warnings fail the check               |
+| `npm run format:check` | Check Prettier formatting without changing files                               |
+| `npm run format`       | Apply Prettier formatting                                                      |
+| `npm test`             | Run the eight CMS regression tests once with Vitest                            |
+| `npm run test:watch`   | Re-run tests while editing                                                     |
+| `npm run typecheck`    | Check TypeScript without emitting application files                            |
+| `npm run check`        | Run lint, formatting check, tests, and type checking in order; stop on failure |
+
+Use the same check commands in the future CI pipelines. Generated build files are excluded; Git enforces LF text line endings so Windows and Linux checkouts agree. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`; no policy change is needed.
 
 ## Acknowledgements
 
