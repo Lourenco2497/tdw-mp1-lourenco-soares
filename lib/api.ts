@@ -36,7 +36,9 @@ async function fetchGraphQL(query: string, preview = false): Promise<any> {
     : process.env.CONTENTFUL_ACCESS_TOKEN;
 
   if (!process.env.CONTENTFUL_SPACE_ID || !token) {
-    throw new Error("Contentful configuration is missing a space ID or access token.");
+    throw new Error(
+      "Contentful configuration is missing a space ID or access token.",
+    );
   }
 
   const response = await fetch(
@@ -57,7 +59,9 @@ async function fetchGraphQL(query: string, preview = false): Promise<any> {
 
   const result = await response.json();
   if (result.errors?.length) {
-    throw new Error("Contentful GraphQL query failed. Check the content model and published linked assets.");
+    throw new Error(
+      "Contentful GraphQL query failed. Check the content model and published linked assets.",
+    );
   }
   return result;
 }
@@ -73,12 +77,19 @@ function extractPostEntries(fetchResponse: any): any[] {
   }
   for (const post of posts) {
     if (
-      !post?.title || !post.slug || !post.excerpt ||
-      !post.date || Number.isNaN(Date.parse(post.date)) ||
-      !post.coverImage?.url || !post.author?.name ||
-      !post.author.picture?.url || !post.content?.json
+      !post?.title ||
+      !post.slug ||
+      !post.excerpt ||
+      !post.date ||
+      Number.isNaN(Date.parse(post.date)) ||
+      !post.coverImage?.url ||
+      !post.author?.name ||
+      !post.author.picture?.url ||
+      !post.content?.json
     ) {
-      throw new Error("Contentful post is incomplete. Fill required fields and publish linked authors and images.");
+      throw new Error(
+        "Contentful post is incomplete. Fill required fields and publish linked authors and images.",
+      );
     }
   }
   return posts;

@@ -77,7 +77,7 @@ function HeroPost({
 
 export default async function Page() {
   const allPosts = await getAllPosts(false);
-  
+
   if (!allPosts || allPosts.length === 0) {
     return (
       <div className="container mx-auto px-5">
@@ -86,7 +86,7 @@ export default async function Page() {
       </div>
     );
   }
-  
+
   const heroPost = allPosts[0];
   const morePosts = allPosts.slice(1);
 
