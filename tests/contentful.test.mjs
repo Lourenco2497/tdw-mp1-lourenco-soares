@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, test } from "node:test";
+import { afterEach, beforeEach, test } from "vitest";
 import { getAllPosts, getPostAndMorePosts } from "../lib/api.ts";
 
 const originalFetch = globalThis.fetch;
@@ -10,10 +10,14 @@ const post = {
   date: "2026-10-19",
   excerpt: "An excerpt",
   coverImage: { url: "https://images.ctfassets.net/cover.jpg" },
-  author: { name: "Author", picture: { url: "https://images.ctfassets.net/author.jpg" } },
+  author: {
+    name: "Author",
+    picture: { url: "https://images.ctfassets.net/author.jpg" },
+  },
   content: { json: { nodeType: "document", content: [] } },
 };
-const response = (items) => Response.json({ data: { postCollection: { items } } });
+const response = (items) =>
+  Response.json({ data: { postCollection: { items } } });
 
 beforeEach(() => {
   process.env.CONTENTFUL_SPACE_ID = "test-space";
@@ -37,8 +41,12 @@ test("returns published content and requests embedded asset details", async () =
 
 test("rejects missing credentials before making a request", async () => {
   delete process.env.CONTENTFUL_ACCESS_TOKEN;
-  globalThis.fetch = async () => assert.fail("Must not send an unauthenticated request");
-  await assert.rejects(getAllPosts(false), /Contentful.*config|CONTENTFUL_ACCESS_TOKEN/i);
+  globalThis.fetch = async () =>
+    assert.fail("Must not send an unauthenticated request");
+  await assert.rejects(
+    getAllPosts(false),
+    /Contentful.*config|CONTENTFUL_ACCESS_TOKEN/i,
+  );
 });
 
 test("rejects HTTP failures", async () => {
@@ -47,10 +55,11 @@ test("rejects HTTP failures", async () => {
 });
 
 test("rejects GraphQL errors without returning partial content", async () => {
-  globalThis.fetch = async () => Response.json({
-    data: { postCollection: { items: [post] } },
-    errors: [{ message: "Unresolved linked asset" }],
-  });
+  globalThis.fetch = async () =>
+    Response.json({
+      data: { postCollection: { items: [post] } },
+      errors: [{ message: "Unresolved linked asset" }],
+    });
   await assert.rejects(getAllPosts(false), /Contentful.*GraphQL/);
 });
 
@@ -61,7 +70,10 @@ test("rejects malformed collection responses", async () => {
 
 test("rejects unpublished required linked images", async () => {
   globalThis.fetch = async () => response([{ ...post, coverImage: null }]);
-  await assert.rejects(getAllPosts(false), /Contentful.*required|Contentful.*incomplete/i);
+  await assert.rejects(
+    getAllPosts(false),
+    /Contentful.*required|Contentful.*incomplete/i,
+  );
 });
 
 test("allows a genuinely empty collection", async () => {
