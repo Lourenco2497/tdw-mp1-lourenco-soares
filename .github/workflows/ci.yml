@@ -1,6 +1,10 @@
 name: PipeLine
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  repository_dispatch:
+    types: [contentful-update]
 
 permissions:
   contents: read
