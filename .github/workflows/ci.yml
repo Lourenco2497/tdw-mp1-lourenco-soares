@@ -5,6 +5,9 @@ on:
   pull_request:
   repository_dispatch:
     types: [contentful-update]
+  schedule:
+    - cron: "0 0 * * *"
+      timezone: "Europe/Lisbon"
 
 permissions:
   contents: read
