@@ -195,6 +195,12 @@ For pull requests originating in this repository, GitHub Actions also deploys an
 
 Previews are public review environments and do not replace either production site. This implementation interprets the assignment's default-branch deployment restriction as applying to production, with previews as an additional review feature. If the restriction is intended to cover every deployment, disable the `preview` job. The GitHub preview waits for GitHub's own quality/build chain; the six required checks across both platforms still govern merging into `main`.
 
+### Automatic failure diagnosis
+
+The separate `Copilot failure diagnosis` workflow listens for completed `PipeLine` runs. It analyses failures from same-repository push, Contentful dispatch, or scheduled runs initiated by the repository owner. PR-event runs are skipped to avoid duplicate analysis; fork and other-actor runs are excluded. Successful or cancelled pipelines do not request an AI diagnosis. CircleCI failures are outside this integration.
+
+The workflow reads its diagnosis script from the default branch, fetches the first failed job's logs using read-only Actions access, and sends only a redacted tail of at most 12,000 characters to Copilot. Filtering removes common credential patterns and the active token; this is best-effort filtering, not a guarantee for arbitrary secret formats. Copilot runs in an isolated temporary directory with shell/write tools denied and built-in MCP servers disabled. Its advice appears in the diagnosis run's Summary with a link to the original failure; it cannot change code or override quality checks, branch protection, or deployment decisions. Each diagnosis consumes the owner's Copilot allowance and has a two-minute model timeout. The manual `Copilot connection check` remains available as a smoke test.
+
 ### Local quality commands
 
 | Command                | Purpose                                                                        |
@@ -202,7 +208,7 @@ Previews are public review environments and do not replace either production sit
 | `npm run lint`         | Check Next.js and TypeScript lint rules; warnings fail the check               |
 | `npm run format:check` | Check Prettier formatting without changing files                               |
 | `npm run format`       | Apply Prettier formatting                                                      |
-| `npm test`             | Run the eight CMS regression tests once with Vitest                            |
+| `npm test`             | Run CMS and CI-diagnosis regression tests once with Vitest                     |
 | `npm run test:watch`   | Re-run tests while editing                                                     |
 | `npm run typecheck`    | Check TypeScript without emitting application files                            |
 | `npm run check`        | Run lint, formatting check, tests, and type checking in order; stop on failure |
