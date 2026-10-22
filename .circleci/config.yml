@@ -41,6 +41,25 @@ jobs:
           name: Type check
           command: npm run typecheck
 
+  build:
+    docker:
+      - image: node:24-bookworm
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-v1-node24-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Build static site
+          command: npm run build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - out
+
 workflows:
   pipeline:
     jobs:
@@ -48,3 +67,6 @@ workflows:
       - quality:
           requires:
             - install
+      - build:
+          requires:
+            - quality
