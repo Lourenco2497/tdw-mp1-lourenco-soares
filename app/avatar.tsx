@@ -15,6 +15,7 @@ export default function Avatar({
           className="object-cover h-full rounded-full"
           height={48}
           width={48}
+          CARALHAO 
           src={picture.url}
         />
       </div>
