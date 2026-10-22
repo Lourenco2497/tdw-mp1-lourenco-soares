@@ -98,3 +98,54 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
           command: pages deploy out --project-name="${{ vars.CLOUDFLARE_PROJECT_NAME }}" --branch=main
+
+  preview:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Download static site
+        uses: actions/download-artifact@v8
+        with:
+          name: static-site
+          path: out/
+      - name: Deploy isolated PR preview
+        id: preview
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          packageManager: npm
+          command: pages deploy out --project-name="${{ vars.CLOUDFLARE_PROJECT_NAME }}" --branch="pr-${{ github.event.pull_request.number }}"
+      - name: Update preview link on PR
+        uses: actions/github-script@v9
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.deployment-url }}
+        with:
+          script: |
+            const url = new URL(process.env.PREVIEW_URL);
+            if (url.protocol !== 'https:' || !url.hostname.endsWith('.pages.dev')) {
+              throw new Error('Expected a Cloudflare Pages preview URL');
+            }
+            const marker = '<!-- cloudflare-pr-preview -->';
+            const body = `${marker}\nPreview: [Open site](${url.href})\n\nCommit: \`${context.payload.pull_request.head.sha}\``;
+            const issue = { ...context.repo, issue_number: context.issue.number };
+            const comments = await github.paginate(github.rest.issues.listComments, issue);
+            const previous = comments.find(comment => comment.user.type === 'Bot' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...issue, body });
+            }

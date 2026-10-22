@@ -185,7 +185,15 @@ npm run check
 
 Use Node.js 24, as recorded in `.nvmrc`, and install dependencies with `npm ci`. The Vitest tests mock Contentful, so they need no credentials. The build exports the home page, published post pages, and a 404 page into `out/`. Deploy that directory to a static host such as Cloudflare Pages. There is no `npm start` server for this static export; use `npm run dev` for local development.
 
-Publishing or unpublishing Contentful content requires another build and deployment. The planned CMS webhook will automate that. Missing credentials, failed CMS queries, or incomplete published posts fail the build rather than silently deploying an empty blog. A genuinely empty CMS collection still displays the empty state.
+Publishing or unpublishing Contentful content requires another build and deployment. The Contentful webhook triggers GitHub Actions through `repository_dispatch` with event type `contentful-update`. Missing credentials, failed CMS queries, or incomplete published posts fail the build rather than silently deploying an empty blog. A genuinely empty CMS collection still displays the empty state.
+
+### Production and PR previews
+
+Production deployments run only from `main`. GitHub Actions publishes to [the main site](https://tdw-mp1-lourenco-soares.pages.dev/), while CircleCI publishes to [its separate demonstration site](https://tdw-mp1-lourenco-soares-circleci.pages.dev/).
+
+For pull requests originating in this repository, GitHub Actions also deploys an isolated Cloudflare Pages preview after its quality checks and static build succeed. The preview reuses the build artifact, targets a `pr-<number>` branch, and adds or updates one bot comment on the PR with its URL. Later successful builds update that comment. Fork PRs do not receive previews. CircleCI continues to deploy only from `main`.
+
+Previews are public review environments and do not replace either production site. This implementation interprets the assignment's default-branch deployment restriction as applying to production, with previews as an additional review feature. If the restriction is intended to cover every deployment, disable the `preview` job. The GitHub preview waits for GitHub's own quality/build chain; the six required checks across both platforms still govern merging into `main`.
 
 ### Local quality commands
 
