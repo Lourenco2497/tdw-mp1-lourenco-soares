@@ -36,8 +36,7 @@ test("returns published content and requests embedded asset details", async () =
     assert.match(query, /links\s*\{\s*assets/);
     return response([post]);
   };
-  // Intentional failure to demonstrate CircleCI quality gating; revert after proof.
-  assert.deepEqual(await getAllPosts(false), []);
+  assert.deepEqual(await getAllPosts(false), [post]);
 });
 
 test("rejects missing credentials before making a request", async () => {
