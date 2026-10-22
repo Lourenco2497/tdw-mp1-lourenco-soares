@@ -60,6 +60,18 @@ jobs:
           paths:
             - out
 
+  deploy:
+    docker:
+      - image: node:24-bookworm
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Deploy static site to Cloudflare Pages
+          command: |
+            test -f out/index.html
+            npx --yes wrangler@4 pages deploy out --project-name="$CLOUDFLARE_PROJECT_NAME" --branch=main
+
 workflows:
   pipeline:
     jobs:
@@ -70,3 +82,7 @@ workflows:
       - build:
           requires:
             - quality
+      - deploy:
+          requires:
+            - build
+          filters: pipeline.git.branch == "main"
